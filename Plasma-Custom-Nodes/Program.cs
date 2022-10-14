@@ -82,6 +82,8 @@ namespace PlasmaModding {
             prop.handler = handler;
             prop.name = name;
             prop.position = position;
+
+            return prop;
         }
 
         [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] {typeof(string), typeof(Type)})]
