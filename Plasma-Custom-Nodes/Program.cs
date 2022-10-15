@@ -1,7 +1,7 @@
-﻿using Behavior;
-using HarmonyLib;
+﻿using HarmonyLib;
 using System.Reflection;
 using UnityEngine;
+using Behavior;
 
 namespace PlasmaModding {
     public static class CustomNodeManager
@@ -9,7 +9,7 @@ namespace PlasmaModding {
         static IEnumerable<AgentGestalt> agentGestalts = Enumerable.Empty<AgentGestalt>();
         static bool loadedNodeResources = false;
         static bool awoken = false;
-        static Harmony harmony;
+        static Harmony? harmony;
 
         public static void Awake()
         {
@@ -53,37 +53,82 @@ namespace PlasmaModding {
                 gestalt.ports = new Dictionary<int, AgentGestalt.Port>();
             RegisterGestalt(gestalt);
         }
-
-        public static AgentGestalt.Port CreatePort(string name, string desc, AgentGestalt.Port.Types type, Data.Types datatype, int pos, int operation = -1)
+        private static AgentGestalt.Port CreateGenericPort(AgentGestalt gestalt, string name, string description)
         {
             AgentGestalt.Port port = new AgentGestalt.Port();
-            port.name = name;
-            port.description = desc;
-            port.type = type;
-            port.dataType = datatype;
-            port.position = pos;
-
-            if (operation > -1)
+            int port_dict_id = 1;
+            try
             {
-                port.operation = operation;
-            }
+                port_dict_id = gestalt.ports.Keys.Last() + 1;
+            } catch (Exception e) { }
 
+            int position = 1;
+            port.position = position;
+            gestalt.ports.Add(port_dict_id, port);
+            port.name = name;
+            port.description = description;
+            return port;
+        }
+
+        public static AgentGestalt.Port CreateCommandPort(AgentGestalt gestalt, string name, string description, int operation)
+        {
+            AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
+            port.operation = operation;
+            port.type = AgentGestalt.Port.Types.Command;
+            return port;
+        }
+
+        public static AgentGestalt.Port CreatePropertyPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null)
+        {
+            if (defaultData == null)
+                defaultData = new Data();
+            AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
+            AgentGestalt.Property property = new AgentGestalt.Property();
+            int property_dict_id = 1;
+            try
+            {
+                property_dict_id = gestalt.properties.Keys.Last() + 1;
+            }
+            catch (Exception e) { }
+
+
+            property.position = port.position;
+            gestalt.properties.Add(property_dict_id, property);
+            property.defaultData = defaultData;
+            property.configurable = configurable;
+            property.name = name;
+            property.description = description;
+            port.dataType = datatype;
+            port.mappedProperty = property_dict_id;
+            port.type = AgentGestalt.Port.Types.Property;
+            port.expectsData = true;
+            
 
             return port;
         }
 
-        public static AgentProperty CreateProperty(string name, string desc, Data defaultData, int driverCommand, int handler, int position, bool configurable)
+        public static AgentGestalt.Port CreateOutputPort(AgentGestalt gestalt, string name, string description, Data.Types datatype=Data.Types.None,  bool configurable=true, Data? defaultData = null)
         {
-            AgentProperty prop = new AgentGestalt.Property();
-            prop.configurable = configurable;
-            prop.defaultData = defaultData;
-            prop.description = desc;
-            prop.driverCommand = driverCommand;
-            prop.handler = handler;
-            prop.name = name;
-            prop.position = position;
-
-            return prop;
+            if (defaultData == null)
+                defaultData = new Data();
+            AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
+            AgentGestalt.Property property = new AgentGestalt.Property();
+            int property_dict_id = 1;
+            try
+            {
+                property_dict_id = gestalt.properties.Keys.Last() + 1;
+            }
+            catch (Exception e) { }
+            property.position = port.position;
+            gestalt.properties.Add(property_dict_id, property);
+            property.defaultData = defaultData;
+            property.configurable = configurable;
+            property.name = name;
+            property.description = description;
+            port.dataType = datatype;
+            port.injectedProperty = property_dict_id;
+            port.type = AgentGestalt.Port.Types.Output;
+            return port;
         }
 
         [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] {typeof(string), typeof(Type)})]
@@ -103,6 +148,5 @@ namespace PlasmaModding {
                 }
             }
         }
-
     }
 }
