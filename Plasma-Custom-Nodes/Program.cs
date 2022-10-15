@@ -3,7 +3,8 @@ using System.Reflection;
 using UnityEngine;
 using Behavior;
 
-namespace PlasmaModding {
+namespace PlasmaModding
+{
     public static class CustomNodeManager
     {
         static IEnumerable<AgentGestalt> agentGestalts = Enumerable.Empty<AgentGestalt>();
@@ -19,7 +20,7 @@ namespace PlasmaModding {
             harmony = new Harmony("CustomNodeManager");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
-            if(Holder.agentGestalts != null)
+            if (Holder.agentGestalts != null)
             {
                 loadedNodeResources = true;
             }
@@ -30,7 +31,7 @@ namespace PlasmaModding {
             Awake();
             if (loadedNodeResources)
                 throw new LateGestaltRegistrationException();
-            agentGestalts = agentGestalts.Concat(new[] {gestalt});
+            agentGestalts = agentGestalts.Concat(new[] { gestalt });
         }
 
         public class InsufficientGestaltDataException : Exception
@@ -42,22 +43,28 @@ namespace PlasmaModding {
 
         public static void CreateNode(AgentGestalt gestalt, string unique_node_name)
         {
-            gestalt.id = (AgentGestaltEnum)unique_node_name.GetHashCode()+1000;
-            if(gestalt.agent == null)
+            gestalt.id = (AgentGestaltEnum)unique_node_name.GetHashCode() + 1000;
+            if (gestalt.agent == null)
                 throw new InsufficientGestaltDataException("No agent attached to gestalt");
             if (gestalt.displayName == null)
                 throw new InsufficientGestaltDataException("Node should have a display name");
             if (gestalt.properties == null)
                 gestalt.properties = new Dictionary<int, AgentGestalt.Property>();
-            if ( gestalt.ports == null)
+            if (gestalt.ports == null)
                 gestalt.ports = new Dictionary<int, AgentGestalt.Port>();
             RegisterGestalt(gestalt);
         }
         private static AgentGestalt.Port CreateGenericPort(AgentGestalt gestalt, string name, string description)
         {
             AgentGestalt.Port port = new AgentGestalt.Port();
-            int port_dict_id = (gestalt.ports.Count() > 0) ? gestalt.ports.Keys.Max() + 1 : 1;
-            int position = (gestalt.ports.Count() > 0) ? gestalt.ports[gestalt.ports.Keys.Max()].position + 1 : 1;
+            int port_dict_id = 1;
+            try
+            {
+                port_dict_id = gestalt.ports.Keys.Last() + 1;
+            }
+            catch (Exception e) { }
+
+            int position = 1;
             port.position = position;
             gestalt.ports.Add(port_dict_id, port);
             port.name = name;
@@ -69,6 +76,7 @@ namespace PlasmaModding {
         {
             AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
             port.operation = operation;
+            port.type = AgentGestalt.Port.Types.Command;
             return port;
         }
 
@@ -78,33 +86,54 @@ namespace PlasmaModding {
                 defaultData = new Data();
             AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
             AgentGestalt.Property property = new AgentGestalt.Property();
-            int property_dict_id = (gestalt.ports.Count() > 0) ? gestalt.properties.Keys.Max() + 1 : 1;
+            int property_dict_id = 1;
+            try
+            {
+                property_dict_id = gestalt.properties.Keys.Last() + 1;
+            }
+            catch (Exception e) { }
+
+
             property.position = port.position;
             gestalt.properties.Add(property_dict_id, property);
             property.defaultData = defaultData;
             property.configurable = configurable;
+            property.name = name;
+            property.description = description;
             port.dataType = datatype;
             port.mappedProperty = property_dict_id;
+            port.type = AgentGestalt.Port.Types.Property;
+            port.expectsData = true;
+
+
             return port;
         }
-        
-        public static AgentGestalt.Port CreateOutputPort(AgentGestalt gestalt, string name, string description, Data.Types datatype=Data.Types.None,  bool configurable=true, Data? defaultData = null)
+
+        public static AgentGestalt.Port CreateOutputPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null)
         {
             if (defaultData == null)
                 defaultData = new Data();
             AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
             AgentGestalt.Property property = new AgentGestalt.Property();
-            int property_dict_id = (gestalt.ports.Count() > 0) ? gestalt.properties.Keys.Max() + 1 : 1;
+            int property_dict_id = 1;
+            try
+            {
+                property_dict_id = gestalt.properties.Keys.Last() + 1;
+            }
+            catch (Exception e) { }
             property.position = port.position;
             gestalt.properties.Add(property_dict_id, property);
             property.defaultData = defaultData;
             property.configurable = configurable;
+            property.name = name;
+            property.description = description;
             port.dataType = datatype;
             port.injectedProperty = property_dict_id;
+            port.type = AgentGestalt.Port.Types.Output;
             return port;
         }
 
-        [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] {typeof(string), typeof(Type)})]
+        [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] { typeof(string), typeof(Type) })]
         class LoadResourcesPatch
         {
             public static void Postfix(string path, Type systemTypeInstance, ref UnityEngine.Object[] __result)
