@@ -2,6 +2,7 @@
 using System.Reflection;
 using UnityEngine;
 using Behavior;
+using System.Linq;
 
 namespace PlasmaModding
 {
@@ -60,11 +61,18 @@ namespace PlasmaModding
             int port_dict_id = 1;
             try
             {
-                port_dict_id = gestalt.ports.Keys.Last() + 1;
+                port_dict_id = GetHighestKey(gestalt.ports) + 1;
             }
             catch (Exception e) { }
 
             int position = 1;
+            try
+            {
+                position = gestalt.ports[port_dict_id - 1].position + 1;
+            }
+            catch (Exception e) { }
+
+
             port.position = position;
             gestalt.ports.Add(port_dict_id, port);
             port.name = name;
@@ -89,7 +97,7 @@ namespace PlasmaModding
             int property_dict_id = 1;
             try
             {
-                property_dict_id = gestalt.properties.Keys.Last() + 1;
+                property_dict_id = GetHighestKey(gestalt.ports) + 1;
             }
             catch (Exception e) { }
 
@@ -109,6 +117,11 @@ namespace PlasmaModding
             return port;
         }
 
+        private static int GetHighestKey(Dictionary<int, AgentGestalt.Port> l)
+        {
+            return l.Keys.OrderBy(b => b).Last(); 
+        }
+
         public static AgentGestalt.Port CreateOutputPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null)
         {
             if (defaultData == null)
@@ -118,7 +131,7 @@ namespace PlasmaModding
             int property_dict_id = 1;
             try
             {
-                property_dict_id = gestalt.properties.Keys.Last() + 1;
+                property_dict_id = GetHighestKey(gestalt.ports) + 1;
             }
             catch (Exception e) { }
             property.position = port.position;
