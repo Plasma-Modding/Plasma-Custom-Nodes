@@ -146,13 +146,13 @@ namespace PlasmaModding
             return port;
         }
 
-        [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] { typeof(string), typeof(Type) })]
+        [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] { typeof(string[]), typeof(Type) })]
         class LoadResourcesPatch
         {
             public static void Postfix(string path, Type systemTypeInstance, ref UnityEngine.Object[] __result)
             {
                 if (path == "Gestalts/Logic Agents" && systemTypeInstance == typeof(AgentGestalt) && !loadedNodeResources)
-                {
+                {   
                     int size = __result.Length;
                     int newSize = size + agentGestalts.Count();
                     UnityEngine.Object[] temp = new UnityEngine.Object[newSize];
