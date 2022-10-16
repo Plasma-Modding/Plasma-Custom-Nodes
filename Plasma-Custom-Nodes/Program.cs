@@ -146,7 +146,7 @@ namespace PlasmaModding
             return port;
         }
 
-        [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] { typeof(string[]), typeof(Type) })]
+        [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] { typeof(string), typeof(Type) })]
         class LoadResourcesPatch
         {
             public static void Postfix(string path, Type systemTypeInstance, ref UnityEngine.Object[] __result)
