@@ -63,14 +63,14 @@ namespace PlasmaModding
             {
                 port_dict_id = GetHighestKey(gestalt.ports) + 1;
             }
-            catch (Exception e) { }
+            catch (Exception) { }
 
             int position = 1;
             try
             {
                 position = gestalt.ports[port_dict_id - 1].position + 1;
             }
-            catch (Exception e) { }
+            catch (Exception) { }
 
 
             port.position = position;
@@ -88,7 +88,7 @@ namespace PlasmaModding
             return port;
         }
 
-        public static AgentGestalt.Port CreatePropertyPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null)
+        public static AgentGestalt.Port CreatePropertyPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null, string? reference_name = null)
         {
             if (defaultData == null)
                 defaultData = new Data();
@@ -104,6 +104,8 @@ namespace PlasmaModding
 
             property.position = port.position;
             gestalt.properties.Add(property_dict_id, property);
+            if (gestalt.agent.GetType() == typeof(CustomAgent))
+                ((Dictionary<string, int>) gestalt.agent.GetField("properties", BindingFlags.NonPublic | BindingFlags.Static).GetValue(gestalt.agent)).Add(reference_name ?? name, property_dict_id);
             property.defaultData = defaultData;
             property.configurable = configurable;
             property.name = name;
@@ -122,7 +124,7 @@ namespace PlasmaModding
             return l.Keys.OrderBy(b => b).Last(); 
         }
 
-        public static AgentGestalt.Port CreateOutputPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null)
+        public static AgentGestalt.Port CreateOutputPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null, string? reference_name = null)
         {
             if (defaultData == null)
                 defaultData = new Data();
@@ -133,9 +135,11 @@ namespace PlasmaModding
             {
                 property_dict_id = GetHighestKey(gestalt.ports) + 1;
             }
-            catch (Exception e) { }
+            catch (Exception) { }
             property.position = port.position;
             gestalt.properties.Add(property_dict_id, property);
+            if (gestalt.agent.GetType() == typeof(CustomAgent))
+                ((Dictionary<string, int>)gestalt.agent.GetField("outputs", BindingFlags.NonPublic | BindingFlags.Static).GetValue(gestalt.agent)).Add(reference_name ?? name, property_dict_id);
             property.defaultData = defaultData;
             property.configurable = configurable;
             property.name = name;
