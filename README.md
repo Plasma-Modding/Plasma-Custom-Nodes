@@ -1,7 +1,7 @@
 # Plasma-Custom-Nodes
 A library to unify and slightly streamline the process of adding custom nodes into Plasma
 
-# Create A custom node using this Library
+# Create a custom node using this Library
 *Note: This library requires that its methods are called before `[Assembly-CSharp.dll]Holder.Awake` so make sure the mod entry is happening at least prior to that*
 
 1. Create a new class that inherits `CustomAgent`
