@@ -11,7 +11,10 @@ namespace PlasmaModding
         static IEnumerable<AgentGestalt> agentGestalts = Enumerable.Empty<AgentGestalt>();
         static bool loadedNodeResources = false;
         static bool awoken = false;
+        static Dictionary<string, AgentCategoryEnum> customCategories = new Dictionary<string, AgentCategoryEnum>();
+        private static int highestCategoryId = 3;
         static Harmony? harmony;
+        private static int recent_port_dict_id;
 
         public static void Awake()
         {
@@ -55,6 +58,21 @@ namespace PlasmaModding
                 gestalt.ports = new Dictionary<int, AgentGestalt.Port>();
             RegisterGestalt(gestalt);
         }
+        public static AgentGestalt CreateGestalt(Type agent, string displayName, string? description = null, AgentCategoryEnum category = AgentCategoryEnum.Misc)
+        {
+            AgentGestalt gestalt = (AgentGestalt)ScriptableObject.CreateInstance(typeof(AgentGestalt));
+            gestalt.componentCategory = AgentGestalt.ComponentCategories.Behavior;
+            gestalt.properties = new Dictionary<int, AgentGestalt.Property>();
+            gestalt.ports = new Dictionary<int, AgentGestalt.Port>();
+            gestalt.type = AgentGestalt.Types.Logic;
+
+            gestalt.agent = agent;
+            gestalt.displayName = displayName;
+            gestalt.description = description;
+            gestalt.nodeCategory = category;
+
+            return gestalt;
+        }
         private static AgentGestalt.Port CreateGenericPort(AgentGestalt gestalt, string name, string description)
         {
             AgentGestalt.Port port = new AgentGestalt.Port();
@@ -77,6 +95,7 @@ namespace PlasmaModding
             gestalt.ports.Add(port_dict_id, port);
             port.name = name;
             port.description = description;
+            recent_port_dict_id = port_dict_id;
             return port;
         }
 
@@ -104,8 +123,15 @@ namespace PlasmaModding
 
             property.position = port.position;
             gestalt.properties.Add(property_dict_id, property);
-            if (gestalt.agent.GetType() == typeof(CustomAgent))
-                ((Dictionary<string, int>) gestalt.agent.GetField("properties", BindingFlags.NonPublic | BindingFlags.Static).GetValue(gestalt.agent)).Add(reference_name ?? name, property_dict_id);
+            if (gestalt.agent.IsSubclassOf(typeof(CustomAgent)))
+            {
+                if (!CustomAgent.properties.ContainsKey(gestalt.agent))
+                {
+                    CustomAgent.properties.Add(gestalt.agent, new Dictionary<string, int>());
+
+                }
+                CustomAgent.properties[gestalt.agent].Add(reference_name ?? name, property_dict_id);
+            }
             property.defaultData = defaultData;
             property.configurable = configurable;
             property.name = name;
@@ -114,7 +140,6 @@ namespace PlasmaModding
             port.mappedProperty = property_dict_id;
             port.type = AgentGestalt.Port.Types.Property;
             port.expectsData = true;
-
 
             return port;
         }
@@ -138,8 +163,15 @@ namespace PlasmaModding
             catch (Exception) { }
             property.position = port.position;
             gestalt.properties.Add(property_dict_id, property);
-            if (gestalt.agent.GetType() == typeof(CustomAgent))
-                ((Dictionary<string, int>)gestalt.agent.GetField("outputs", BindingFlags.NonPublic | BindingFlags.Static).GetValue(gestalt.agent)).Add(reference_name ?? name, property_dict_id);
+            if (gestalt.agent.IsSubclassOf(typeof(CustomAgent)))
+            {
+                if (!CustomAgent.outputs.ContainsKey(gestalt.agent))
+                {
+                    CustomAgent.outputs.Add(gestalt.agent, new Dictionary<string, int>());
+
+                }
+                CustomAgent.outputs[gestalt.agent].Add(reference_name ?? name, recent_port_dict_id);
+            }
             property.defaultData = defaultData;
             property.configurable = configurable;
             property.name = name;
@@ -150,8 +182,17 @@ namespace PlasmaModding
             return port;
         }
 
+        public static AgentCategoryEnum CustomCategory(string name)
+        {
+            name = name.ToUpperInvariant();
+            if (customCategories.ContainsKey(name))
+                return customCategories[name];
+            customCategories.Add(name, (AgentCategoryEnum)(++highestCategoryId));
+            return (AgentCategoryEnum) highestCategoryId;
+        }
+
         [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] { typeof(string), typeof(Type) })]
-        class LoadResourcesPatch
+        private class LoadResourcesPatch
         {
             public static void Postfix(string path, Type systemTypeInstance, ref UnityEngine.Object[] __result)
             {
@@ -164,6 +205,58 @@ namespace PlasmaModding
                     agentGestalts.ToArray().CopyTo(temp, size);
                     __result = temp;
                     loadedNodeResources = true;
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Visor.ProcessorUICategoryItem), nameof(Visor.ProcessorUICategoryItem.Setup))]
+        private class AddCategoryToDictPatch
+        {
+            static int applied = 0;
+            public static void Prefix()
+            {
+                if (Holder.instance.agentCategories != null && applied < customCategories.Count())
+                    foreach (string categoryName in customCategories.Keys)
+                    {
+                        if (!Holder.instance.agentCategories.ContainsKey(customCategories[categoryName])){
+                            applied++;
+                            Holder.instance.agentCategories.Add(customCategories[categoryName], categoryName);
+                        }
+                    }
+            }
+        }
+
+        [HarmonyPatch(typeof(System.Enum), "GetNames")]
+        public class EnumNamePatch
+        {
+            public static void Postfix(System.Type enumType, ref string[] __result)
+            {
+                if (enumType == typeof(AgentCategoryEnum))
+                {
+                    string[] tabs = customCategories.Keys.ToArray();
+                    string[] names = new string[__result.Length + tabs.Length];
+                    __result.CopyTo(names, 0);
+                    tabs.CopyTo(names, __result.Length);
+                    __result = names;
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(System.Enum), "TryParseEnum")]
+        public class EnumParsePatch
+        {
+            public static void Postfix(System.Type enumType, string value, ref object parseResult, ref bool __result)
+            {
+                if (!__result && enumType == typeof(AgentCategoryEnum) && customCategories.ContainsKey(value))
+                {
+                    __result = true;
+                    System.Type EnumResult = typeof(System.Enum).GetNestedType("EnumResult", BindingFlags.NonPublic);
+                    MethodInfo Init = EnumResult.GetMethod("Init", BindingFlags.NonPublic | BindingFlags.Instance);
+                    FieldInfo parsedEnum = EnumResult.GetField("parsedEnum", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var presult = System.Convert.ChangeType(System.Activator.CreateInstance(EnumResult), EnumResult);
+                    Init.Invoke(presult, new object[] { false });
+                    parsedEnum.SetValue(presult, customCategories[value]);
+                    parseResult = presult;
                 }
             }
         }
