@@ -25,6 +25,6 @@ A library to unify and slightly streamline the process of adding custom nodes in
 # `PlasmaModding.CustomAgent`
 > This class should only be extended, not instantiated. The reason it is not an interface is because the `Agent` class is not an interface
 #### - [Writing A CustomAgent Class](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Writing-a-CustomAgent-class)
-#### - [Node Operations]
-   - [Get Property]
-   - [Write Output]
+#### - [Port Operations](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Operations)
+   - [Get Property](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Operations#getpropertystring): `GetProperty(string)`
+   - [Write Output](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Operations#writeoutputstring-behaviordata): `WriteOutput(string, Behavior.Data`
