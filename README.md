@@ -11,8 +11,8 @@ A library to unify and streamline the process of adding custom nodes into Plasma
 
 # `PlasmaModding.CustomNodeManager`
 > This class is static. It should not be instantiated, all methods can be called directly on the type `PlasmaModding.CustomNodeManager`
-#### - [Creating Gestalt For Node](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/CreateGestalt-Method) 
-   - [Create Gestalt](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/CreateGestalt-Method#creategestalttype-string-string-agentcategoryenum): `PlasmaModding.CustomNodeManager.CreateGestalt(Type, string, string?, AgentCategoryEnum)`
+#### - [Creating Gestalt For Node](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Create-Gestalt-Method) 
+   - [Create Gestalt](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Create-Gestalt-Method#creategestalttype-string-string-agentcategoryenum): `PlasmaModding.CustomNodeManager.CreateGestalt(Type, string, string?, AgentCategoryEnum)`
 #### - [Add Ports to Gestalt](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Creation-Methods)
    - [Create Command Port](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Creation-Methods#createcommandportagentgestalt-string-string-int): `CreateCommandPort(AgentGestalt, string, string, int)`
    - [Create Property Port](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Creation-Methods#createpropertyportagentgestalt-string-string-behaviordatatypes-bool-behaviordata-string): `CreatePropertyPort(AgentGestalt, string, string, Behavior.Data.Types, bool, Behavior.Data?, string?)`
@@ -27,4 +27,4 @@ A library to unify and streamline the process of adding custom nodes into Plasma
 #### - [Writing A CustomAgent Class](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Writing-a-CustomAgent-class)
 #### - [Port Operations](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Operations)
    - [Get Property](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Operations#getpropertystring): `GetProperty(string)`
-   - [Write Output](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Operations#writeoutputstring-behaviordata): `WriteOutput(string, Behavior.Data`
+   - [Write Output](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Port-Operations#writeoutputstring-behaviordata): `WriteOutput(string, Behavior.Data)`
